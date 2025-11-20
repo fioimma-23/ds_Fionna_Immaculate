@@ -1,177 +1,154 @@
-\#  Data Science Assignment
+# Data Science Assignment
 
-\*\*Candidate:\*\* Fionna Immaculate    
-\*\*Date:\*\* 20 November 2025  
+**Candidate:** Fionna Immaculate  
+**Date:** 20 November 2025
 
-\---
+---
 
-\#\# Project Overview    
-This project analyzes whether trader performance on Hyperliquid is influenced by Bitcoin market sentiment (Fear, Neutral, Greed).  
+## Project Overview
+This project analyzes whether trader performance on Hyperliquid is influenced by Bitcoin market sentiment (Fear, Neutral, Greed).
 
-The workflow includes:    
-\- Data cleaning    
-\- Merging sentiment \+ trading data    
-\- Exploratory Data Analysis (EDA)    
-\- Statistical testing    
-\- Predictive modeling    
-\- Insights & conclusions  
+The workflow includes:  
+- Data cleaning  
+- Merging sentiment and trading data  
+- Exploratory Data Analysis (EDA)  
+- Statistical testing  
+- Predictive modeling  
+- Insights & conclusions
 
-\---  
-\#\#  Project Structure
+---
 
-ds\_Fionna\_Immaculate/  
-│  
-├── notebook\_1.ipynb  
-├── csv\_files/  
-│   ├── hyperliquid\_data.csv  
-│   ├── fear\_greed\_index.csv  
-├── outputs/  
-│   ├── daily\_total\_pnl\_with\_rolling.png  
-│   ├── pnl\_by\_sentiment.png  
-├── ds\_report.pdf  
-└── README.md
+## Data Sources
 
-\---
+### 1. Hyperliquid Historical Trader Data  
+Contains execution-level trade information:
 
-\#\# Data Sources
+- `Account`: Unique trader wallet/account identifier  
+- `Coin`: Trading pair or instrument  
+- `Execution Price`: Price at which the trade was executed  
+- `Size Tokens`: Trade size in token units  
+- `Size USD`: Trade size converted to USD  
+- `Side`: BUY or SELL action  
+- `Timestamp IST`: Execution timestamp in IST timezone  
+- `Start Position`: Position held before this trade  
+- `Direction`: Direction of the trade (Buy/Sell)  
+- `Closed PnL`: Profit or loss realized upon trade closure  
+- `Transaction Hash`, `Order ID`, `Trade ID`: Unique identifiers  
+- `Crossed`: Boolean flag indicating crossed order  
+- `Fee`: Trading fee paid  
+- `Timestamp`: Additional timestamp column (verification purposes)  
 
-\#\#\# 1\. Hyperliquid Historical Trader Data    
-Columns include:
+Supports daily PnL calculation and trader behavior analysis.
 
-\- \`Account\`    
-\- \`Coin\`    
-\- \`Execution Price\`    
-\- \`Size Tokens\`    
-\- \`Size USD\`    
-\- \`Side\`    
-\- \`Timestamp IST\`    
-\- \`Start Position\`    
-\- \`Direction\`    
-\- \`Closed PnL\`    
-\- \`Transaction Hash\`    
-\- \`Order ID\`    
-\- \`Crossed\`    
-\- \`Fee\`    
-\- \`Trade ID\`    
-\- \`Timestamp\`  
+### 2. Bitcoin Fear & Greed Index  
+Daily market sentiment values:
 
-This dataset supports daily PnL calculation and behavior analysis.
+- `timestamp`: UNIX epoch timestamp  
+- `value`: Numeric Fear & Greed Index score (0–100)  
+- `classification`: Market sentiment label (e.g., Fear, Greed, Neutral)  
+- `date`: Human-readable date, used to merge with trader data  
 
-\---
+---
 
-\#\#\# 2\. Bitcoin Fear & Greed Index    
-Columns:
+## Data Preparation Steps
 
-\- \`timestamp\`    
-\- \`value\`    
-\- \`classification\`    
-\- \`date\`  
+- Standardized column names to snake_case  
+- Converted `timestamp_ist` to datetime format  
+- Extracted dates for daily aggregation  
+- Computed per-day summary metrics:  
+  - Total trades  
+  - Total volume (USD)  
+  - Total PnL  
+  - Win rate  
+  - Buy vs. sell counts  
+- Merged trader data with Fear & Greed Index on `date`  
+- Filled missing sentiment values with `"unknown"`  
 
-Used to merge sentiment with trading performance.
+---
 
-\---
+## Exploratory Data Analysis (EDA)
 
-\#\# Data Preparation Steps
+- Daily PnL varies significantly with bursts of high activity  
+- 7-day rolling average smooths short-term volatility  
+- Greed days exhibit higher PnL variance versus fear days  
+- No sentiment category shows consistently superior profitability  
 
-\- Renamed columns to snake\_case.    
-\- Converted \`timestamp\_ist\` to datetime.    
-\- Extracted dates for daily aggregation.    
-\- Computed:  
-  \- total trades    
-  \- total volume (USD)    
-  \- total PnL    
-  \- win rate    
-  \- buy/sell counts    
-\- Merged with sentiment dataset on \`date\`.    
-\- Filled missing sentiment values with \`"unknown"\`.
+_All plots saved in `outputs/`_
 
-\---
+---
 
-\#\# Exploratory Data Analysis (EDA)
+## Statistical Analysis
 
-\#\#\# Key visual insights:  
-\- Daily PnL fluctuates significantly across days.    
-\- A 7-day rolling average smooths volatility.    
-\- Greed days show high variance; Fear days more stable.    
-\- No sentiment group shows consistently higher profitability.
+Performed Mann–Whitney U test comparing PnL on Fear vs. Greed days:
 
-All plots stored in:    
-outputs/
+| Statistic | p-value |
+|-----------|----------|
+| 2251.0    | 0.5872   |
 
-\---
+Interpretation: No statistically significant difference. Market sentiment does **not** affect trader profitability in this dataset.
 
-\#\# Statistical Analysis
+---
 
-Performed a \*\*Mann–Whitney U test\*\* comparing Fear vs Greed PnL.
+## Predictive Modeling
 
-\*\*Result:\*\*
+**Model:** Random Forest Classifier  
+**Features:**  
+- `total_trades`  
+- `total_volume_usd`  
+- `win_rate`  
 
-Statistic: 2251.0  
-p-value: 0.5872
+**Target:** Profitable day (1 if total PnL > 0; else 0)  
 
-\*\*Interpretation:\*\*    
-\- No statistically significant difference.    
-\- Market sentiment does \*\*not\*\* affect trader PnL in this dataset.
+**Performance:**  
+- Accuracy: 92.98%  
+- ROC AUC: 0.8004  
 
-\---
+**Feature Importance:**  
+| Feature         | Importance |
+|-----------------|------------|
+| win_rate        | 0.503      |
+| total_trades    | 0.266      |
+| total_volume_usd| 0.230      |
 
-\#\# Predictive Modeling
+Conclusion: Trader behavior, especially win rate, dominates profitability prediction; sentiment has low predictive power.
 
-\#\#\# Model: Random Forest Classifier    
-\*\*Features:\*\*    
-\- \`total\_trades\`    
-\- \`total\_volume\_usd\`    
-\- \`win\_rate\`  
+---
 
-\*\*Target:\*\* profitable\_day (1/0)
+## Insights
 
-\*\*Performance:\*\*  
-Accuracy: 92.98%  
-ROC AUC: 0.8004
+- Fear & Greed Index sentiment shows no significant correlation with trader profit outcomes  
+- Win rate and trading volume strongly predict profitable days  
+- High PnL days align with increased liquidity and active trading behavior  
+- Behavior-focused analytics outperform sentiment-driven strategies in this context  
 
-\#\#\# Feature Importance:
+---
 
-win\_rate 0.503  
-total\_trades 0.266  
-total\_volume\_usd 0.230
+## How to Run This Project
 
-\*\*Conclusion:\*\*    
-Trader behavior, especially win rate, is the primary driver of profitability — not sentiment.
+1. Open `notebook_1.ipynb` in Google Colab  
+2. Upload CSV files into `csv_files/` folder  
+3. Run all cells for data cleaning and EDA  
+4. Run subsequent cells for statistical analysis and predictive modeling  
+5. View generated plots in `outputs/`  
+6. Refer to the final report `ds_report.pdf` for comprehensive analysis  
 
-\---
+---
 
-\#\# Insights
+## Requirements
 
-\- Fear & Greed Index does \*\*not\*\* correlate with profit outcomes.    
-\- High trader win rate strongly predicts profitable days.    
-\- High PnL days align with higher liquidity/activity.    
-\- Behavior-driven analytics outperform sentiment-driven strategies.
+- Python 3.x  
+- pandas  
+- numpy  
+- matplotlib  
+- seaborn  
+- scikit-learn  
+- scipy  
 
-\---
+---
 
-\#\# How to Run This Project
+## Final Notes
 
-1\. Open \*\*notebook\_1.ipynb\*\* in Google Colab    
-2\. Upload CSVs into \`csv\_files/\`    
-3\. Run all cells for cleaning \+ EDA    
-5\. Run all cells for statistical analysis \+ modeling    
-6\. View generated plots in \`outputs/\`    
-7\. Final report is saved as \`ds\_report.pdf\`
+This project demonstrates an end-to-end data science workflow, including data cleaning, merging, exploratory analysis, hypothesis testing, predictive modeling, and insight generation for real-world crypto trading analytics.
 
-\---
-
-\#\# Requirements  
-\- Python 3.x  
-\- pandas  
-\- numpy  
-\- matplotlib  
-\- seaborn  
-\- scikit-learn  
-\- scipy
-
-\---
-
-\#\# Final Notes
-
-This project demonstrates end-to-end data science capability including cleaning, merging, EDA, hypothesis testing, machine learning modeling, and insights generation.
+---
 
